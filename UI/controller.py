@@ -1,96 +1,104 @@
+
 import flet as ft
 
 
 class Controller:
     def __init__(self, view, model):
-        # the view, with the graphical elements of the UI
         self._view = view
-        # the model, which implements the logic of the program and holds the data
         self._model = model
+
     def fillAllYears(self):
-        year = self._model.getAllYears()
-        for da in year:
-            self._view._ddAnno1.options.append(ft.dropdown.Option(da))
-        for a in year:
-            self._view._ddAnno2.options.append(ft.dropdown.Option(a))
+        # Recupero gli anni dal Model
+        years = self._model.getAllYears()
+
+        # Popolo i due menu a tendina
+        for year in years:
+            self._view._ddAnno1.options.append(ft.dropdown.Option(year))
+            self._view._ddAnno2.options.append(ft.dropdown.Option(year))
 
         self._view.update_page()
 
+    def handleCreaGrafo(self, e):
+        # Leggo gli anni selezionati
+        da = self._view._ddAnno1.value
+        a = self._view._ddAnno2.value
 
+        # Costruisco il grafo
+        self._model.buildGraph(da, a)
 
-
-    def handleCreaGrafo(self,e):
-        #PASSO IL VALORE CATEGORY
-        da= self._view._ddAnno1.value
-        a= self._view._ddAnno2.value
-
-        #e costruisco il model sul valore category
-        self._model.buildGraph(da,a)
-        # SVUOTO I RISULTATI PRECEDENTI
+        # Pulisco i risultati precedenti
         self._view.txt_result.controls.clear()
-        # MOSTRO NUMERO DI NODI E ARCHI
+
+        # Mostro il numero di nodi e archi
         self._view.txt_result.controls.append(
             ft.Text("Grafo correttamente creato:")
         )
-
         self._view.txt_result.controls.append(
             ft.Text(f"Numero di nodi: {self._model.getNumNodi()}")
         )
-
         self._view.txt_result.controls.append(
             ft.Text(f"Numero di archi: {self._model.getNumArchi()}")
         )
+
         self._view.update_page()
 
     def handleDettagli(self, e):
-        # PULISCO L'AREA DEI RISULTATI
+        # Pulisco i risultati precedenti
         self._view.txt_result.controls.clear()
-        # Prendo dal Model la lista delle componenti connesse
+
+        # Recupero le componenti connesse
         cc = self._model.TotCompConnesse()
 
-
-        # Il numero di componenti = lunghezza della lista
+        # Stampo il numero di componenti connesse
         self._view.txt_result.controls.append(
-            ft.Text(f"Il grafo ha {len(cc)} componenti connesse")
+            ft.Text(f"Numero di componenti connesse: {len(cc)}")
         )
 
-        # Trovo la componente connessa più grande
+        # Recupero la componente più grande, ordinata per grado decrescente
         largest = self._model.getLargestComp(cc)
 
-        # La dimensione della componente = numero di album che contiene
+        # Stampo la dimensione della componente più grande
         self._view.txt_result.controls.append(
-            ft.Text(f"Dimensione della componente connessa più grande: {len(largest)} album")
+            ft.Text(f"Dimensione della componente connessa più grande/maggior numero di nodi: {len(largest)} nodi")
         )
 
-        # Stampo il titolo e il numero di brani di ogni album
+        # Stampo tutti i nodi della componente più grande
         self._view.txt_result.controls.append(
-            ft.Text("Dettagli componente connessa in ordine decrescente:")
+            ft.Text("Nodi della componente più grande:")
         )
 
-        # ORDINO gli album alfabeticamente per titolo
-        largest.sort(key=lambda a: a.name)
-
-        # Scorro gli album uno alla volta
-        for a in largest:
+        for c in largest:
             self._view.txt_result.controls.append(
-                ft.Text(f"- {a.name}: ")
+                ft.Text(f"- {c}")
             )
 
-        # Aggiorno la pagina per visualizzare i risultati
+        # Stampo i nodi con il relativo grado
+        self._view.txt_result.controls.append(
+            ft.Text("Nodi ordinati per grado decrescente:")
+        )
 
-        # TOP 5 ARCHI DI PESO MAGGIORE
+        for c in largest:
+            self._view.txt_result.controls.append(
+                ft.Text(f"- {c} (grado: {self._model.getDegree(c)})")
+            )
+
+        # Recupero e stampo i tre archi di peso maggiore
         topEdges = self._model.getTop3Edges()
+
         self._view.txt_result.controls.append(
             ft.Text("TOP 3 ARCHI DI PESO MAGGIORE:")
         )
 
-        # STAMPO I 5 ARCHI con numerazione
-        for i, (artist1, artist2, data) in enumerate(topEdges, start=1):
+        for i, (c1, c2, data) in enumerate(topEdges, start=1):
             self._view.txt_result.controls.append(
-                ft.Text(f"{i}. {artist1} -- {artist2}: (peso = {data['weight']})")
+                ft.Text(
+                    f"{i}. {c1} -- {c2}: "
+                    f"({data['weight']} piloti condivisi)"
+                )
             )
-        self._view.update_page()
 
+        # Aggiorno la pagina
+        self._view.update_page()
 
     def handleCerca(self, e):
         pass
